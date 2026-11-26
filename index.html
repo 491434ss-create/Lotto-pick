@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#0d0f13" media="(prefers-color-scheme: dark)" />
+<meta name="description" content="매번 새로 뽑는 로또 6/45 번호 추천. 참고용 무작위 조합." />
+<title>로또 번호 추천</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23111827'/%3E%3Ccircle cx='24' cy='32' r='11' fill='%23fbc400'/%3E%3Ccircle cx='41' cy='32' r='11' fill='%2369c8f2'/%3E%3C/svg%3E" />
+<style>
+  :root{
+    --bg:#f6f7f9;
+    --fg:#111827;
+    --muted:#8b94a3;
+    --card:#ffffff;
+    --line:rgba(17,24,39,.07);
+    --shadow:0 1px 2px rgba(16,24,40,.04), 0 10px 28px -16px rgba(16,24,40,.18);
+    --btn-bg:#111827;
+    --btn-fg:#ffffff;
+    --ball:clamp(31px, 8.4vw, 40px);
+    --gap:clamp(4px, 1.4vw, 7px);
+    --radius:20px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0d0f13;
+      --fg:#eef1f6;
+      --muted:#8a919e;
+      --card:#171a20;
+      --line:rgba(255,255,255,.07);
+      --shadow:0 1px 2px rgba(0,0,0,.5), 0 14px 34px -20px rgba(0,0,0,.9);
+      --btn-bg:#eef1f6;
+      --btn-fg:#0d0f13;
+    }
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    min-height:100svh;
+    background:var(--bg);
+    color:var(--fg);
+    font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    justify-content:center;
+    padding:calc(28px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom));
+  }
+
+  .app{width:100%;max-width:440px}
+
+  header{margin:6px 2px 22px}
+  .eyebrow{
+    margin:0 0 8px;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.16em;
+    color:var(--muted);
+  }
+  h1{
+    margin:0;
+    font-size:clamp(24px, 6.6vw, 30px);
+    font-weight:800;
+    letter-spacing:-.02em;
+    line-height:1.2;
+  }
+
+  .games{
+    list-style:none;
+    margin:0 0 18px;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .game{
+    display:flex;
+    align-items:center;
+    gap:clamp(7px, 2.2vw, 12px);
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:clamp(11px, 3.2vw, 15px) clamp(11px, 3.4vw, 16px);
+  }
+
+  .tag{
+    flex:0 0 auto;
+    width:15px;
+    font-size:12px;
+    font-weight:700;
+    color:var(--muted);
+    text-align:center;
+    letter-spacing:.02em;
+  }
+
+  .balls{
+    flex:1 1 auto;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:var(--gap);
+    min-width:0;
+  }
+
+  .ball{
+    flex:0 0 auto;
+    width:var(--ball);
+    height:var(--ball);
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    font-size:clamp(12px, 3.4vw, 15px);
+    font-weight:800;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:-.02em;
+    line-height:1;
+    background-image:radial-gradient(circle at 32% 26%, rgba(255,255,255,.55), rgba(255,255,255,0) 58%);
+  }
+  .ball.c1{background-color:#fbc400;color:#4a3500}
+  .ball.c2{background-color:#69c8f2;color:#0b3a52}
+  .ball.c3{background-color:#ff7272;color:#4d1414}
+  .ball.c4{background-color:#aaaab0;color:#26262b}
+  .ball.c5{background-color:#b0d840;color:#2d3a05}
+
+  .copy{
+    flex:0 0 auto;
+    -webkit-appearance:none;appearance:none;
+    border:0;background:transparent;
+    width:28px;height:28px;
+    border-radius:9px;
+    display:grid;place-items:center;
+    color:var(--muted);
+    cursor:pointer;
+    transition:background-color .15s, color .15s, transform .12s;
+    touch-action:manipulation;
+  }
+  .copy:hover{background:rgba(127,127,127,.10);color:var(--fg)}
+  .copy:active{transform:scale(.92)}
+  .copy svg{width:16px;height:16px;display:block}
+  .copy .ok{display:none}
+  .copy.done{color:#12a150}
+  .copy.done .dup{display:none}
+  .copy.done .ok{display:block}
+
+  .draw{
+    -webkit-appearance:none;appearance:none;
+    width:100%;
+    height:56px;
+    border:0;
+    border-radius:16px;
+    background:var(--btn-bg);
+    color:var(--btn-fg);
+    font-family:inherit;
+    font-size:16px;
+    font-weight:800;
+    letter-spacing:-.01em;
+    cursor:pointer;
+    transition:transform .12s ease, opacity .15s;
+    touch-action:manipulation;
+  }
+  .draw:hover{opacity:.92}
+  .draw:active{transform:scale(.985)}
+  .draw:disabled{opacity:.6;cursor:default}
+
+  .note{
+    margin:16px 4px 0;
+    font-size:11px;
+    line-height:1.65;
+    color:var(--muted);
+    text-align:center;
+    letter-spacing:.01em;
+  }
+
+  :focus-visible{outline:2px solid #3b82f6;outline-offset:3px}
+
+  .toast{
+    position:fixed;
+    left:50%;
+    bottom:calc(22px + env(safe-area-inset-bottom));
+    transform:translate(-50%, 8px);
+    background:rgba(17,24,39,.9);
+    color:#fff;
+    font-size:12.5px;
+    font-weight:600;
+    padding:9px 14px;
+    border-radius:999px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .18s ease, transform .18s ease;
+    backdrop-filter:blur(8px);
+    white-space:nowrap;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  @media (prefers-color-scheme: dark){
+    .toast{background:rgba(238,241,246,.94);color:#0d0f13}
+  }
+
+  .pop{animation:pop .26s cubic-bezier(.2,.9,.3,1.2) both}
+  @keyframes pop{
+    from{opacity:0;transform:translateY(4px) scale(.94)}
+    to{opacity:1;transform:none}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <p class="eyebrow">LOTTO 6/45</p>
+    <h1>로또 번호 추천</h1>
+  </header>
+
+  <main>
+    <ol class="games" id="games" aria-live="polite" aria-label="추천 번호"></ol>
+    <button class="draw" id="draw" type="button">새 번호 뽑기</button>
+    <p class="note">본 사이트는 조합 참고용이며, 로또는 매 회차 독립 시행입니다.</p>
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var TAGS = ["A", "B", "C", "D", "E"];
+  var COUNT = 6;
+  var MAX = 45;
+
+  var gamesEl = document.getElementById("games");
+  var drawBtn = document.getElementById("draw");
+  var toastEl = document.getElementById("toast");
+  var lines = [];
+  var toastTimer = null;
+
+  function randInt(n) {
+    // unbiased random int in [0, n)
+    if (window.crypto && window.crypto.getRandomValues) {
+      var limit = Math.floor(4294967296 / n) * n;
+      var buf = new Uint32Array(1);
+      var v;
+      do { window.crypto.getRandomValues(buf); v = buf[0]; } while (v >= limit);
+      return v % n;
+    }
+    return Math.floor(Math.random() * n);
+  }
+
+  function pickLine() {
+    var pool = [];
+    for (var i = 1; i <= MAX; i++) pool.push(i);
+    // partial Fisher–Yates
+    for (var j = 0; j < COUNT; j++) {
+      var k = j + randInt(MAX - j);
+      var t = pool[j]; pool[j] = pool[k]; pool[k] = t;
+    }
+    return pool.slice(0, COUNT).sort(function (a, b) { return a - b; });
+  }
+
+  function ballClass(n) {
+    if (n <= 10) return "c1";
+    if (n <= 20) return "c2";
+    if (n <= 30) return "c3";
+    if (n <= 40) return "c4";
+    return "c5";
+  }
+
+  function pad(n) { return n < 10 ? "0" + n : String(n); }
+
+  function generate() {
+    var seen = {};
+    var out = [];
+    for (var g = 0; g < TAGS.length; g++) {
+      var line, key, guard = 0;
+      do {
+        line = pickLine();
+        key = line.join("-");
+        guard++;
+      } while (seen[key] && guard < 40);
+      seen[key] = true;
+      out.push(line);
+    }
+    return out;
+  }
+
+  var COPY_ICON =
+    '<svg class="dup" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<rect x="9" y="9" width="11" height="11" rx="2.5"></rect>' +
+    '<path d="M15 5.5A2.5 2.5 0 0 0 12.5 3h-6A3.5 3.5 0 0 0 3 6.5v6A2.5 2.5 0 0 0 5.5 15"></path></svg>' +
+    '<svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M5 12.5 9.5 17 19 7"></path></svg>';
+
+  function render(data, animate) {
+    gamesEl.innerHTML = "";
+    data.forEach(function (line, idx) {
+      var li = document.createElement("li");
+      li.className = "game";
+
+      var tag = document.createElement("span");
+      tag.className = "tag";
+      tag.textContent = TAGS[idx];
+
+      var balls = document.createElement("div");
+      balls.className = "balls";
+      line.forEach(function (n) {
+        var b = document.createElement("span");
+        b.className = "ball " + ballClass(n);
+        b.textContent = pad(n);
+        balls.appendChild(b);
+      });
+
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "copy";
+      btn.innerHTML = COPY_ICON;
+      btn.setAttribute("aria-label", TAGS[idx] + "게임 번호 복사");
+      btn.addEventListener("click", function () { copyLine(idx, btn); });
+
+      li.appendChild(tag);
+      li.appendChild(balls);
+      li.appendChild(btn);
+      gamesEl.appendChild(li);
+    });
+
+    if (animate) {
+      var nodes = gamesEl.querySelectorAll(".game");
+      for (var i = 0; i < nodes.length; i++) {
+        nodes[i].classList.add("pop");
+        nodes[i].style.animationDelay = (i * 40) + "ms";
+      }
+    }
+  }
+
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 1600);
+  }
+
+  function copyLine(idx, btn) {
+    var text = lines[idx].map(pad).join(", ");
+    function done() {
+      btn.classList.add("done");
+      toast(TAGS[idx] + "게임 번호를 복사했어요");
+      setTimeout(function () { btn.classList.remove("done"); }, 1400);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { legacyCopy(text, done); });
+    } else {
+      legacyCopy(text, done);
+    }
+  }
+
+  function legacyCopy(text, done) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "-1000px";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    if (ok) done(); else toast("복사에 실패했어요");
+  }
+
+  function draw(animate) {
+    lines = generate();
+    render(lines, animate);
+  }
+
+  drawBtn.addEventListener("click", function () {
+    drawBtn.disabled = true;
+    draw(true);
+    setTimeout(function () { drawBtn.disabled = false; }, 220);
+  });
+
+  draw(false);
+})();
+</script>
+</body>
+</html>
