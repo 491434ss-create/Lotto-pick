@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://491434ss-create.github.io/Lotto-pick/sitemap.xml
