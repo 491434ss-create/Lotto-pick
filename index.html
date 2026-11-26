@@ -134,26 +134,6 @@
   .draw:active{transform:scale(.985)}
   .draw:disabled{opacity:.65;cursor:default}
 
-  .copy{
-    -webkit-appearance:none;appearance:none;
-    width:48px;height:48px;
-    display:grid;place-items:center;
-    border:1px solid var(--line);
-    border-radius:12px;
-    background:var(--btn-bg);
-    color:var(--muted);
-    cursor:pointer;
-    transition:border-color .15s, color .15s, transform .12s;
-    touch-action:manipulation;
-  }
-  .copy:hover{color:var(--fg);border-color:rgba(120,130,145,.45)}
-  .copy:active{transform:scale(.96)}
-  .copy svg{width:19px;height:19px;display:block}
-  .copy .ok{display:none}
-  .copy.done{color:#12a150;border-color:rgba(18,161,80,.45)}
-  .copy.done .dup{display:none}
-  .copy.done .ok{display:block}
-
   .note{
     margin:22px 0 0;
     max-width:360px;
@@ -165,28 +145,6 @@
   }
 
   :focus-visible{outline:2px solid #3b82f6;outline-offset:3px}
-
-  .toast{
-    position:fixed;
-    left:50%;
-    bottom:calc(22px + env(safe-area-inset-bottom));
-    transform:translate(-50%, 8px);
-    background:rgba(17,24,39,.9);
-    color:#fff;
-    font-size:12.5px;
-    font-weight:600;
-    padding:9px 14px;
-    border-radius:999px;
-    opacity:0;
-    pointer-events:none;
-    transition:opacity .18s ease, transform .18s ease;
-    backdrop-filter:blur(8px);
-    white-space:nowrap;
-  }
-  .toast.show{opacity:1;transform:translate(-50%,0)}
-  @media (prefers-color-scheme: dark){
-    .toast{background:rgba(238,241,246,.94);color:#0d0f13}
-  }
 
   @keyframes pop{
     from{opacity:0;transform:scale(.55)}
@@ -219,22 +177,11 @@
   </div>
 
   <div class="actions">
-    <button class="draw" id="draw" type="button">번호 뽑기</button>
-    <button class="copy" id="copy" type="button" aria-label="번호 복사" title="번호 복사">
-      <svg class="dup" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="9" y="9" width="11" height="11" rx="2.5"></rect>
-        <path d="M15 5.5A2.5 2.5 0 0 0 12.5 3h-6A3.5 3.5 0 0 0 3 6.5v6A2.5 2.5 0 0 0 5.5 15"></path>
-      </svg>
-      <svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M5 12.5 9.5 17 19 7"></path>
-      </svg>
-    </button>
+    <button class="draw" id="draw" type="button">추첨</button>
   </div>
 </main>
 
 <p class="note">본 사이트는 조합 참고용이며, 로또는 매 회차 독립 시행입니다.</p>
-
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 (function () {
@@ -245,10 +192,7 @@
 
   var ballsEl = document.getElementById("balls");
   var drawBtn = document.getElementById("draw");
-  var copyBtn = document.getElementById("copy");
-  var toastEl = document.getElementById("toast");
   var numbers = [];
-  var toastTimer = null;
 
   function randInt(n) {
     // unbiased random int in [0, n)
@@ -297,42 +241,6 @@
     });
   }
 
-  function toast(msg) {
-    toastEl.textContent = msg;
-    toastEl.classList.add("show");
-    if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 1600);
-  }
-
-  function copyNumbers() {
-    var text = numbers.map(pad).join(", ");
-    function done() {
-      copyBtn.classList.add("done");
-      toast("번호 6개를 복사했어요");
-      setTimeout(function () { copyBtn.classList.remove("done"); }, 1400);
-    }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(done, function () { legacyCopy(text, done); });
-    } else {
-      legacyCopy(text, done);
-    }
-  }
-
-  function legacyCopy(text, done) {
-    var ta = document.createElement("textarea");
-    ta.value = text;
-    ta.setAttribute("readonly", "");
-    ta.style.position = "fixed";
-    ta.style.top = "-1000px";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.select();
-    var ok = false;
-    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
-    document.body.removeChild(ta);
-    if (ok) done(); else toast("복사에 실패했어요");
-  }
-
   function draw(animate) {
     numbers = pickLine();
     render(animate);
@@ -343,8 +251,6 @@
     draw(true);
     setTimeout(function () { drawBtn.disabled = false; }, 260);
   });
-
-  copyBtn.addEventListener("click", copyNumbers);
 
   draw(false);
 })();
